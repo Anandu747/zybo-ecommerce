@@ -84,7 +84,7 @@ export default function ProductCard({ product }: any) {
         style={{ backgroundColor: activeColor.bg }}
       />
 
-      {/* IMAGE (ONLY ONE IMAGE) */}
+      {/* IMAGE (ONLY ONE IMAGE1) */}
       <div
         ref={imageRef}
         className="relative z-10 flex justify-center pt-[40px]"
