@@ -1,65 +1,160 @@
+"use client";
+
 import Image from "next/image";
+import { useRef, useState, useEffect } from "react";
+import gsap from "gsap";
+
+const SIZES = [7, 8, 9, 10];
+
+// ✅ color → image mapping
+const COLOR_IMAGE_MAP: Record<string, string> = {
+  "#9ACD32": "/Property 1=Frame 541.png",
+  "#8A2BE2": "/Property 1=Frame 543.png",
+  "#8B0000": "/component 28.png",
+};
+
+const COLORS = Object.keys(COLOR_IMAGE_MAP);
+
+function AnimatedCard({ src }: { src: string }) {
+  const imageRef = useRef<HTMLDivElement>(null);
+  const bottomRef = useRef<HTMLDivElement>(null);
+  const tl = useRef<gsap.core.Timeline | null>(null);
+
+  const [currentImage, setCurrentImage] = useState(src);
+  const [activeColor, setActiveColor] = useState<string | null>(null);
+
+  // ✅ INITIAL SETUP (THIS FIXES YOUR ISSUE)
+  useEffect(() => {
+    if (!imageRef.current || !bottomRef.current) return;
+
+    gsap.set(imageRef.current, {
+      y: 0,
+      paddingBottom: 0,
+    });
+
+    gsap.set(bottomRef.current, {
+      y: 20,
+      opacity: 0,
+      pointerEvents: "none",
+    });
+
+    tl.current = gsap.timeline({ paused: true });
+
+    tl.current
+      .to(imageRef.current, {
+        y: -24,
+        paddingBottom: 56,
+        duration: 0.3,
+        ease: "power1.out",
+      })
+      .to(
+        bottomRef.current,
+        {
+          y: 0,
+          opacity: 1,
+          pointerEvents: "auto",
+          duration: 0.3,
+          ease: "power1.out",
+        },
+        "-=0.15"
+      );
+  }, []);
+
+  const onEnter = () => {
+    tl.current?.play();
+  };
+
+  const onLeave = () => {
+    tl.current?.reverse();
+  };
+
+  return (
+    <div
+      onMouseEnter={onEnter}
+      onMouseLeave={onLeave}
+      className="relative w-[312px] h-[405px] bg-[#1c1c1c] overflow-hidden"
+    >
+      {/* IMAGE */}
+      <div
+        ref={imageRef}
+        className="w-full h-full flex items-center justify-center"
+      >
+        <Image
+          key={currentImage}
+          src={currentImage}
+          alt="Product"
+          width={312}
+          height={405}
+        />
+      </div>
+
+      {/* BOTTOM CONTENT (HIDDEN BY DEFAULT) */}
+      <div
+        ref={bottomRef}
+        className="absolute bottom-[16px] left-0 w-full px-[20px]"
+      >
+        {/* SIZE */}
+        <div className="flex items-center gap-2 mb-3 text-white">
+          <span className="text-sm">SIZE:</span>
+          {SIZES.map((s) => (
+            <button
+              key={s}
+              className="w-[28px] h-[28px] bg-white text-black text-sm rounded-md"
+            >
+              {s}
+            </button>
+          ))}
+        </div>
+
+        {/* COLOR */}
+        <div className="flex items-center gap-3 mb-4">
+          <span className="text-sm text-white">COLOR:</span>
+          {COLORS.map((c) => (
+            <button
+              key={c}
+              onClick={() => {
+                setActiveColor(c);
+                setCurrentImage(COLOR_IMAGE_MAP[c]);
+              }}
+              className={`w-[14px] h-[14px] rounded-full ${
+                activeColor === c ? "ring-2 ring-white" : ""
+              }`}
+              style={{ backgroundColor: c }}
+            />
+          ))}
+        </div>
+
+        {/* BUTTON */}
+        <button className="w-full h-[40px] bg-white rounded-lg font-medium">
+          Buy Now
+        </button>
+      </div>
+    </div>
+  );
+}
 
 export default function Home() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
+    <main className="w-full bg-[#161616] flex justify-center">
+      <div className="w-[1440px] min-w-[1440px] px-[60px] pt-[40px] pb-[80px]">
+        <section className="w-[1320px] flex flex-col gap-[40px] mt-[25px]">
+          <h1 className="text-[40px] text-white">
+            Men’s Jordan Shoes
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+
+          <div className="grid grid-cols-4 gap-[24px]">
+            <AnimatedCard src="/Property 1=Frame 541.png" />
+            <AnimatedCard src="/Property 1=Frame 543.png" />
+            <AnimatedCard src="/Property 1=Frame 543.png" />
+            <AnimatedCard src="/component 28.png" />
+
+            <AnimatedCard src="/Property 1=Frame 541.png" />
+            <AnimatedCard src="/Property 1=Frame 542.png" />
+            <AnimatedCard src="/Property 1=Frame 543.png" />
+            <AnimatedCard src="/component 28.png" />
+          </div>
+        </section>
+      </div>
+    </main>
   );
 }
