@@ -1,68 +1,60 @@
 import Image from "next/image";
+import Link from "next/link";
+import { cookies } from "next/headers";
 
-const Navbar = () => {
+export default async function Navbar() {
+  const cookieStore = await cookies();
+  const token = cookieStore.get("access_token");
+  const name = cookieStore.get("user_name")?.value;
+
   return (
     <header className="w-full bg-[#191919]">
-      <div
-        className="
-          max-w-[1440px]
-          h-[70px]
-          mx-auto
-          flex
-          items-center
-          justify-between
-          py-[8px]
-          px-4
-          sm:px-6
-          md:px-[60px]
-        "
-      >
-        {/* Left Logo */}
-        <div className="flex items-center">
-          <Image
-            src="/logo (1).png"
-            alt="Logo"
-            width={52}
-            height={52}
-            priority
-          />
-        </div>
+      <div className="max-w-[1440px] h-[70px] mx-auto flex items-center justify-between px-[60px]">
+        
+        {/* Logo */}
+        {/* <Image src="/logo (1).png" alt="Logo" width={52} height={52} /> */}
+        
+<Link href="/" className="flex items-center">
+  <Image
+    src="/logo (1).png"
+    alt="Logo"
+    width={52}
+    height={52}
+    priority
+  />
+</Link>
 
-        {/* Right Logout */}
-        <div
-          className="
-            flex
-            items-center
-            cursor-pointer
-            w-[95px]
-            h-[24px]
-            gap-4
-            text-white
-            text-sm
-          "
-        >
-          <Image src="/vector.png" alt="Logout" width={19.5} height={19.5} />
-          <span
-            className="
-          
-    w-[55px]
-    h-[20px]
-    font-inter
-    text-[15px]
-    leading-[19.16px]
-    tracking-[-0.03em]
-    text-center
-    text-white
-  
-          
-          "
-          >
-            Log Out
-          </span>
+
+        {/* Right */}
+        <div className="flex items-center gap-6 text-white text-sm">
+
+          {token && (
+            <Link
+              href="/profile"
+              className="flex items-center gap-2 hover:opacity-80"
+            >
+              <Image src="/Vector.png" alt="Profile" width={20} height={20} />
+              <span>{name || "Profile"}</span>
+            </Link>
+          )}
+
+          {token && (
+            <Link
+              href="/api/logout"
+              className="hover:opacity-80"
+            >
+              Log Out
+            </Link>
+          )}
+
+          {!token && (
+            <Link href="/login" className="hover:opacity-80">
+              Login
+            </Link>
+          )}
+
         </div>
       </div>
     </header>
   );
-};
-
-export default Navbar;
+}
