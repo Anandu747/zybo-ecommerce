@@ -1,74 +1,103 @@
-import Image from "next/image";
-import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
+"use client";
 
-type Props = {
-  searchParams: {
-    orderId?: string;
-    amount?: string;
-    status?: string;
-  };
+import Image from "next/image";
+import { useSearchParams } from "next/navigation";
+import { useOrderStore } from "@/lib/orderStore";
+
+const getCurrentDateTime = () => {
+  const now = new Date();
+  return `${now.toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+  })}, ${now.toLocaleDateString()}`;
 };
 
-export default async function OrderSuccessPage({ searchParams }: Props) {
-  const cookieStore = await cookies();
-  const token = cookieStore.get("access_token");
+export default function OrderSuccessPage() {
+  const searchParams = useSearchParams();
+  const orderId = searchParams.get("orderId");
 
-  // Protect page
-  if (!token) redirect("/login");
+  const orders = useOrderStore((s) => s.orders);
+  const order = orders.find((o) => o.id === orderId);
 
-  const { orderId, amount, status } = searchParams;
+  if (!order) {
+    return (
+      <p className="text-white text-center mt-20">
+        Order not found
+      </p>
+    );
+  }
 
   return (
-    <main className="w-full h-[calc(100vh-70px)] bg-black flex items-center justify-center">
-      <div className="flex flex-col items-center gap-[20px]">
+    <main
+      className="
+        w-full
+        min-h-[calc(100vh-70px)]
+        bg-[#1c1c1c]
+        flex
+        items-center
+        justify-center
+      "
+    >
+      <div className="flex flex-col items-center gap-[12px] text-center">
 
-        {/* ICON */}
         <Image
-          src="/nike-tick.png"
+          src="/logo (1).png"
           alt="Success"
-          width={56}
+          width={106}
           height={56}
         />
 
-        {/* TITLE */}
-        <h1 className="text-white text-[28px] font-semibold">
+        <h1 className="text-[36px] font-bold text-white">
           Successfully Ordered!
         </h1>
 
-        {/* DATE */}
+        {/* ✅ TIME */}
         <p className="text-gray-400 text-sm">
-          {new Date().toLocaleString()}
+          {getCurrentDateTime()}
         </p>
 
         {/* ORDER CARD */}
-        <div className="w-[420px] bg-[#1E1E1E] rounded-[12px] px-4 py-3 flex items-center gap-4">
-
-          {/* PRODUCT IMAGE */}
-          <div className="w-[60px] h-[60px] rounded-[8px] bg-[#2A2A2A] flex items-center justify-center">
+        <div
+          className="
+            w-[548px]
+            h-[128px]
+            bg-[#1E1E1E]
+            rounded-[12px]
+            p-[16px]
+            flex
+            items-center
+            gap-[28px]
+            text-left
+            mt-[14px]
+          "
+        >
+          <div className="w-[109px] h-[96px] bg-[#2A2A2A] rounded-[8px] relative overflow-hidden">
             <Image
-              src="/Property 1=Frame 541.png"
+              src={order.image}
               alt="Product"
-              width={48}
-              height={48}
+              fill
+              className="object-cover"
             />
           </div>
 
-          {/* DETAILS */}
           <div className="flex-1 text-white">
-            <p className="font-medium">Nike Air Max 90</p>
-            <p className="text-xs text-gray-400">
-              Order ID: {orderId}
+            <p className="font-medium">{order.product}</p>
+            <p className="text-gray-400 text-sm">
+              Order ID: {order.id}
+            </p>
+            <p className="text-gray-400 text-sm">
+              Size: {order.size} | Color: {order.color}
             </p>
           </div>
 
-          {/* PRICE */}
           <div className="text-right text-white">
-            <p className="font-semibold">₹{amount}</p>
-            <p className="text-xs text-green-400">{status}</p>
+            <p className="font-semibold">₹{order.price}</p>
+            <p className="text-green-400 text-sm">
+              {order.status}
+            </p>
           </div>
-
         </div>
+
       </div>
     </main>
   );

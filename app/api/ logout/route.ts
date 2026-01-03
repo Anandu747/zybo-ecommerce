@@ -5,8 +5,8 @@ export async function GET() {
     new URL("/login", process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000")
   );
 
-  res.cookies.delete("access_token");
-  res.cookies.delete("user_name");
+  res.cookies.set("access_token", "", { maxAge: 0, path: "/" });
+  res.cookies.set("user_name", "", { maxAge: 0, path: "/" });
 
   return res;
 }

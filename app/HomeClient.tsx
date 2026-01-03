@@ -4,10 +4,10 @@ import Image from "next/image";
 import { useRef, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import gsap from "gsap";
+import { useOrderStore } from "@/lib/orderStore";
 
 const SIZES = [7, 8, 9, 10];
 
-// color → image mapping
 const COLOR_IMAGE_MAP: Record<string, string> = {
   "#9ACD32": "/Property 1=Frame 541.png",
   "#8A2BE2": "/Property 1=Frame 543.png",
@@ -17,99 +17,112 @@ const COLOR_IMAGE_MAP: Record<string, string> = {
 const COLORS = Object.keys(COLOR_IMAGE_MAP);
 
 function AnimatedCard({ src }: { src: string }) {
-  const router = useRouter();  
+  const router = useRouter();
   const imageRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const tl = useRef<gsap.core.Timeline | null>(null);
 
   const [currentImage, setCurrentImage] = useState(src);
   const [activeColor, setActiveColor] = useState<string | null>(null);
+  const [selectedSize, setSelectedSize] = useState<number | null>(null);
 
-  // INITIAL SETUP (THIS FIXES YOUR ISSUE)
   useEffect(() => {
     if (!imageRef.current || !bottomRef.current) return;
 
-    gsap.set(imageRef.current, {
-      y: 0,
-      paddingBottom: 0,
-    });
+    const isDesktop = window.innerWidth >= 1024;
 
     gsap.set(bottomRef.current, {
-      y: 20,
-      opacity: 0,
-      pointerEvents: "none",
+      y: isDesktop ? 20 : 0,
+      opacity: isDesktop ? 0 : 1,
+      pointerEvents: "auto",
     });
 
     tl.current = gsap.timeline({ paused: true });
 
-    tl.current
-      .to(imageRef.current, {
-        y: -24,
-        paddingBottom: 56,
-        duration: 0.3,
-        ease: "power1.out",
-      })
-      .to(
-        bottomRef.current,
-        {
-          y: 0,
-          opacity: 1,
-          pointerEvents: "auto",
+    if (isDesktop) {
+      tl.current
+        .to(imageRef.current, {
+          y: -24,
+          paddingBottom: 56,
           duration: 0.3,
           ease: "power1.out",
-        },
-        "-=0.15"
-      );
+        })
+        .to(
+          bottomRef.current,
+          {
+            y: 0,
+            opacity: 1,
+            duration: 0.3,
+            ease: "power1.out",
+          },
+          "-=0.15"
+        );
+    }
   }, []);
 
   const onEnter = () => {
-    tl.current?.play();
+    if (window.innerWidth >= 1024) tl.current?.play();
   };
 
   const onLeave = () => {
-    tl.current?.reverse();
+    if (window.innerWidth >= 1024) tl.current?.reverse();
   };
 
-    async function handleBuyNow() {
-    const res = await fetch("/api/purchase-product", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        product_id: "PROD001", 
-      }),
-    });
+  const addOrder = useOrderStore((s) => s.addOrder);
 
-    const data = await res.json();
+  function handleBuyNow() {
+    if (!selectedSize || !activeColor) {
+      alert("Select size and color");
+      return;
+    }
 
-    router.push(
-      `/order-success?orderId=${data.order.id}&amount=${data.order.total_amount}&status=${data.order.payment_status}`
-    );
+    const order = {
+      id: "ORD" + Date.now(),
+      product: "Nike Air Max 90",
+      image: currentImage,
+      size: selectedSize,
+      color: activeColor,
+      price: 899,
+      status: "Paid",
+    };
+
+    addOrder(order);
+    router.push(`/order-success?orderId=${order.id}`);
   }
-
 
   return (
     <div
       onMouseEnter={onEnter}
       onMouseLeave={onLeave}
-      className="relative w-[312px] h-[405px] bg-[#1c1c1c] overflow-hidden"
+      className="
+        relative
+        w-full
+        max-w-[312px]
+        h-[380px]
+        sm:h-[405px]
+        bg-[#1c1c1c]
+        overflow-hidden
+      "
     >
       {/* IMAGE */}
-      <div
-        ref={imageRef}
-        className="w-full h-full flex items-center justify-center"
-      >
+      <div ref={imageRef} className="w-full h-full relative overflow-hidden">
         <Image
-          key={currentImage}
           src={currentImage}
           alt="Product"
-          width={312}
-          height={405}
+          fill
+          className="
+            object-cover
+            object-top
+            scale-[1.1]
+            sm:scale-[1.15]
+            -translate-y-[8px]
+            sm:-translate-y-[12px]
+          "
+          priority
         />
       </div>
 
-      {/* BOTTOM CONTENT (HIDDEN BY DEFAULT) */}
+      {/* BOTTOM CONTENT */}
       <div
         ref={bottomRef}
         className="absolute bottom-[16px] left-0 w-full px-[20px]"
@@ -120,7 +133,12 @@ function AnimatedCard({ src }: { src: string }) {
           {SIZES.map((s) => (
             <button
               key={s}
-              className="w-[28px] h-[28px] bg-white text-black text-sm rounded-md"
+              onClick={() => setSelectedSize(s)}
+              className={`w-[28px] h-[28px] rounded-md ${
+                selectedSize === s
+                  ? "bg-black text-white"
+                  : "bg-white text-black"
+              }`}
             >
               {s}
             </button>
@@ -146,7 +164,10 @@ function AnimatedCard({ src }: { src: string }) {
         </div>
 
         {/* BUTTON */}
-        <button onClick={handleBuyNow} className="w-full h-[40px] bg-white rounded-lg font-medium">
+        <button
+          onClick={handleBuyNow}
+          className="w-full h-[40px] bg-white text-black rounded-lg font-medium"
+        >
           Buy Now
         </button>
       </div>
@@ -157,18 +178,33 @@ function AnimatedCard({ src }: { src: string }) {
 export default function Home() {
   return (
     <main className="w-full bg-[#161616] flex justify-center">
-      <div className="w-[1440px] min-w-[1440px] px-[60px] pt-[40px] pb-[80px]">
-        <section className="w-[1320px] flex flex-col gap-[40px] mt-[25px]">
-          <h1 className="text-[40px] text-white">
+      <div
+        className="
+          w-full
+          max-w-[1440px]
+          px-[16px]
+          sm:px-[24px]
+          lg:px-[60px]
+          pt-[40px]
+          pb-[80px]
+        "
+      >
+        <section className="flex flex-col gap-[40px] mt-[25px]">
+          <h1 className="text-[32px] sm:text-[40px] text-white">
             Men’s Jordan Shoes
           </h1>
 
-          <div className="grid grid-cols-4 gap-[24px]">
+          <div className="
+            grid
+            grid-cols-1
+            sm:grid-cols-2
+            lg:grid-cols-4
+            gap-[24px]
+          ">
             <AnimatedCard src="/Property 1=Frame 541.png" />
             <AnimatedCard src="/Property 1=Frame 543.png" />
             <AnimatedCard src="/Property 1=Frame 543.png" />
             <AnimatedCard src="/Component 28.png" />
-
             <AnimatedCard src="/Property 1=Frame 541.png" />
             <AnimatedCard src="/Property 1=Frame 542.png" />
             <AnimatedCard src="/Property 1=Frame 543.png" />
