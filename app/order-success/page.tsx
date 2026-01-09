@@ -1,5 +1,6 @@
 "use client";
 
+export const dynamic = "force-dynamic";
 import Image from "next/image";
 import { useSearchParams } from "next/navigation";
 import { useOrderStore } from "@/lib/orderStore";
